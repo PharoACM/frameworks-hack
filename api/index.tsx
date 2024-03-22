@@ -16,47 +16,18 @@ export const app = new Frog({
   // hub: neynar({ apiKey: 'NEYNAR_FROG_FM' })
 });
 
-const pharoBalance: number = 10;
+// mocked until we fetch from chain
+const pharoBalance: number = 0;
 
 app.frame("/", (c) => {
   const { status } = c;
   // const rateEstimate = inputText || buttonValue;
   return c.res({
-    image: (
-      <div
-        style={{
-          alignItems: "center",
-          background:
-            status === "response"
-              ? "linear-gradient(to right, #432889, #17101F)"
-              : "black",
-          backgroundSize: "100% 100%",
-          display: "flex",
-          flexDirection: "column",
-          flexWrap: "nowrap",
-          height: "100%",
-          justifyContent: "center",
-          textAlign: "center",
-          width: "100%",
-        }}
-      >
-        <div
-          style={{
-            color: "white",
-            fontSize: 60,
-            fontStyle: "normal",
-            letterSpacing: "-0.025em",
-            lineHeight: 1.4,
-            marginTop: 30,
-            padding: "0 120px",
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          {pharoBalance === 0
-            ? "You don't have any Pharo tokens."
-            : "Click next to participate."}
-        </div>
-      </div>
+    image: tempImage(
+      pharoBalance === 0
+        ? "You don't have any PHRO tokens. Go ahead and mint some 🥳"
+        : "Click next to participate.",
+      status
     ),
     intents: [
       pharoBalance === 0 && (
@@ -124,40 +95,7 @@ app.frame("/mint", (c) => {
 app.frame("/participate", (c) => {
   const { status } = c;
   return c.res({
-    image: (
-      <div
-        style={{
-          alignItems: "center",
-          background:
-            status === "response"
-              ? "linear-gradient(to right, #432889, #17101F)"
-              : "black",
-          backgroundSize: "100% 100%",
-          display: "flex",
-          flexDirection: "column",
-          flexWrap: "nowrap",
-          height: "100%",
-          justifyContent: "center",
-          textAlign: "center",
-          width: "100%",
-        }}
-      >
-        <div
-          style={{
-            color: "white",
-            fontSize: 60,
-            fontStyle: "normal",
-            letterSpacing: "-0.025em",
-            lineHeight: 1.4,
-            marginTop: 30,
-            padding: "0 120px",
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          {"Welcome!"}
-        </div>
-      </div>
-    ),
+    image: tempImage("Welcome! Submit your estimate...", status),
     intents: [
       <TextInput placeholder="Enter your estimate..." />,
       <Button value="submit-rate" action="/submit-rate">
@@ -172,40 +110,7 @@ app.frame("/submit-rate", (c) => {
   const { buttonValue, inputText, status } = c;
   const rateEstimate = inputText || buttonValue;
   return c.res({
-    image: (
-      <div
-        style={{
-          alignItems: "center",
-          background:
-            status === "response"
-              ? "linear-gradient(to right, #432889, #17101F)"
-              : "black",
-          backgroundSize: "100% 100%",
-          display: "flex",
-          flexDirection: "column",
-          flexWrap: "nowrap",
-          height: "100%",
-          justifyContent: "center",
-          textAlign: "center",
-          width: "100%",
-        }}
-      >
-        <div
-          style={{
-            color: "white",
-            fontSize: 60,
-            fontStyle: "normal",
-            letterSpacing: "-0.025em",
-            lineHeight: 1.4,
-            marginTop: 30,
-            padding: "0 120px",
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          {`You submitted ${rateEstimate} hours. Thank you!`}
-        </div>
-      </div>
-    ),
+    image: tempImage(`Your estimate is ${rateEstimate}.`, status),
     intents: [
       <Button value="submit-rate" action="/finish">
         Finish
@@ -218,43 +123,50 @@ app.frame("/submit-rate", (c) => {
 app.frame("/finish", (c) => {
   const { status } = c;
   return c.res({
-    image: (
-      <div
-        style={{
-          alignItems: "center",
-          background:
-            status === "response"
-              ? "linear-gradient(to right, #432889, #17101F)"
-              : "black",
-          backgroundSize: "100% 100%",
-          display: "flex",
-          flexDirection: "column",
-          flexWrap: "nowrap",
-          height: "100%",
-          justifyContent: "center",
-          textAlign: "center",
-          width: "100%",
-        }}
-      >
-        <div
-          style={{
-            color: "white",
-            fontSize: 60,
-            fontStyle: "normal",
-            letterSpacing: "-0.025em",
-            lineHeight: 1.4,
-            marginTop: 30,
-            padding: "0 120px",
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          {"Thank you for participating!"}
-        </div>
-      </div>
-    ),
+    image: tempImage("Thank you for participating!", status),
     intents: [],
   });
 });
+
+function tempImage(
+  content: string,
+  status: "initial" | "redirect" | "response"
+) {
+  return (
+    <div
+      style={{
+        alignItems: "center",
+        background:
+          status === "response"
+            ? "linear-gradient(to right, #432889, #17101F)"
+            : "black",
+        backgroundSize: "100% 100%",
+        display: "flex",
+        flexDirection: "column",
+        flexWrap: "nowrap",
+        height: "100%",
+        justifyContent: "center",
+        textAlign: "center",
+        width: "100%",
+      }}
+    >
+      <div
+        style={{
+          color: "white",
+          fontSize: 60,
+          fontStyle: "normal",
+          letterSpacing: "-0.025em",
+          lineHeight: 1.4,
+          marginTop: 30,
+          padding: "0 120px",
+          whiteSpace: "pre-wrap",
+        }}
+      >
+        {content}
+      </div>
+    </div>
+  );
+}
 
 // @ts-ignore
 const isEdgeFunction = typeof EdgeFunction !== "undefined";
