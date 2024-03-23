@@ -1,22 +1,10 @@
-import {
-  Button,
-  ContractTransactionParameters,
-  FrameResponse,
-  Frog,
-  TextInput,
-  TransactionParameters,
-} from "frog";
+import { Button, Frog, TextInput } from "frog";
 import { devtools } from "frog/dev";
 import { neynar } from "frog/hubs";
 import { serveStatic } from "frog/serve-static";
-// import { neynar } from 'frog/hubs'
 import { handle } from "frog/vercel";
-import { encodeFunctionData, formatEther, parseEther, parseGwei } from "viem";
-import { baseSepolia, base, arbitrumSepolia } from "viem/chains";
-import { abi as pharoTokenAbi } from "../abis/PharoToken.js";
-
-const pharoTokenAddress = "0xB4204ecc047F026ABfC3B5794cFDBF7dAC7C4C9E";
-const defaultTokens = 1500;
+import { getPharoBalance, sendMintTransaction } from "../utils/client.js";
+import { Address } from "viem";
 
 // Uncomment to use Edge Runtime.
 // export const config = {
@@ -31,27 +19,26 @@ export const app = new Frog({
 });
 
 // todo: mocked until we fetch from chain
-const pharoBalance: number = 10;
+let pharoBalance: bigint = 0n;
 
-app.frame("/", (c) => {
+app.frame("/", async (c) => {
   const { status, frameData } = c;
+
+  // pharoBalance = await getPharoBalance(frameData?.address! as Address);
 
   console.log("/", { pharoBalance, frameData });
 
   return c.res({
     image: tempImage(
-      pharoBalance === 0
-        ? "You don't have any PHRO tokens. Go ahead and mint some 🥳"
+      pharoBalance === 0n
+        ? "🙀 You don't have any PHRO tokens. Go ahead and mint some 🥳"
         : "Click next to participate.",
       status
     ),
     intents: [
-      pharoBalance === 0 && (
-        <Button.Transaction target="/mint" action="/mint-success">
-          Mint
-        </Button.Transaction>
-      ),
-      pharoBalance > 0 && (
+      pharoBalance < BigInt(1500) ? (
+        <Button action="/mint">Mint</Button>
+      ) : (
         <Button value="participate" action="/participate">
           Next
         </Button>
@@ -63,23 +50,23 @@ app.frame("/", (c) => {
   });
 });
 
-app.transaction("/mint", (c) => {
-  const { frameData, verified } = c;
+app.frame("/mint", async (c) => {
+  const { frameData, verified, status } = c;
   // const { castId, fid, messageHash, network, timestamp, url } = frameData;
 
-  console.log("frameData", frameData);
+  const mintTx = await sendMintTransaction(
+    "0x3f15B8c6F9939879Cb030D6dd935348E57109637" as `0x${string}`
+  );
 
-  const contractData: ContractTransactionParameters = {
-    abi: pharoTokenAbi,
-    chainId: `eip155:${baseSepolia.id}`,
-    functionName: "mintTokensTo",
-    args: ["0xcBf407C33d68a55CB594Ffc8f4fD1416Bba39DA5", parseEther("1500")],
-    to: pharoTokenAddress,
-  };
+  console.log("frameData", { mintTx, verified, frameData });
 
-  if (!verified) {
-    return c.contract(contractData);
-  }
+  return c.res({
+    image: tempImage(
+      "Mint Successful! You now have 1500 PHRO tokens. Click next to participate.",
+      status
+    ),
+    intents: [pharoBalance > 0 && <Button action="/participate">Next</Button>],
+  });
 });
 
 app.frame("/mint-success", (c) => {
