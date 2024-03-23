@@ -29,10 +29,10 @@ app.frame("/", async (c) => {
   const { status, frameData } = c;
 
   // local testing
-  pharoBalance = await getPharoBalance(
-    "0x3f15B8c6F9939879Cb030D6dd935348E57109637" as Address
-  );
-  // pharoBalance = await getPharoBalance(frameData?.address! as Address);
+  // pharoBalance = await getPharoBalance(
+  //   "0x3f15B8c6F9939879Cb030D6dd935348E57109637" as Address
+  // );
+  pharoBalance = await getPharoBalance(frameData?.address! as Address);
 
   console.log("/", {
     pharoBalance: Number(formatEther(pharoBalance)).toFixed(4),
@@ -43,7 +43,9 @@ app.frame("/", async (c) => {
     image: tempImage(
       pharoBalance === 0n
         ? "🙀 You don't have any PHRO tokens. Go ahead and mint some 🥳"
-        : "Click next to participate.",
+        : `Your PHRO balance ${Number(formatEther(pharoBalance)).toFixed(
+            2
+          )}\nClick next to participate.`,
       status
     ),
     intents: [
@@ -140,7 +142,7 @@ app.frame("/submit-rate", (c) => {
 
   // return c.contract(contractData);
   return c.res({
-    image: tempImage(`Your estimate is ${rateEstimate}.`, status),
+    image: tempImage(`Your estimate is in ${rateEstimate} hours SHIB will fall by 5% or more.`, status),
     intents: [
       <Button value="finish" action="/finish">
         Finish
