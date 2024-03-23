@@ -18,6 +18,7 @@ config();
 export const walletClient = createWalletClient({
   chain: baseSepolia,
   transport: http(),
+  // account: privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`),
 });
 
 export const publicClient = createPublicClient({
@@ -66,6 +67,19 @@ export const getPharoBalance = async (user: Address) => {
   console.log("balance", balance);
 
   return BigInt(balance);
+};
+
+export const getShibPriceData = async () => {
+  const response = await fetch(
+    "https://api.coingecko.com/api/v3/simple/price?ids=shiba-inu&vs_currencies=usd",
+    {
+      headers: {
+        "x-cg-demo-api-key": process.env.COIN_GECKO_API_KEY as string,
+      },
+    }
+  );
+
+  return response.json();
 };
 
 // export const sendPolicyTransaction = async (

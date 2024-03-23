@@ -3,8 +3,12 @@ import { devtools } from "frog/dev";
 import { neynar } from "frog/hubs";
 import { serveStatic } from "frog/serve-static";
 import { handle } from "frog/vercel";
-import { getPharoBalance, sendMintTransaction } from "../utils/client.js";
-import { Address } from "viem";
+import {
+  getPharoBalance,
+  getShibPriceData,
+  sendMintTransaction,
+} from "../utils/client.js";
+import { Address, formatEther } from "viem";
 
 // Uncomment to use Edge Runtime.
 // export const config = {
@@ -24,9 +28,16 @@ let pharoBalance: bigint = 0n;
 app.frame("/", async (c) => {
   const { status, frameData } = c;
 
+  // local testing
+  pharoBalance = await getPharoBalance(
+    "0x3f15B8c6F9939879Cb030D6dd935348E57109637" as Address
+  );
   // pharoBalance = await getPharoBalance(frameData?.address! as Address);
 
-  console.log("/", { pharoBalance, frameData });
+  console.log("/", {
+    pharoBalance: Number(formatEther(pharoBalance)).toFixed(4),
+    frameData,
+  });
 
   return c.res({
     image: tempImage(
@@ -93,10 +104,18 @@ app.frame("/mint-success", (c) => {
   });
 });
 
-app.frame("/participate", (c) => {
+app.frame("/participate", async (c) => {
   const { status } = c;
+
+  const shibPrice = await getShibPriceData();
+
+  console.log("shibPrice", shibPrice);
+
   return c.res({
-    image: tempImage("Welcome! Submit your estimate...", status),
+    image: tempImage(
+      `Current SHIB price ${shibPrice["shiba-inu"].usd} \nWelcome! Submit your estimate...`,
+      status
+    ),
     intents: [
       <TextInput placeholder="Enter your estimate..." />,
       <Button action="/submit-rate">Submit</Button>,
