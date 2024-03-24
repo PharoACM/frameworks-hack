@@ -113,3 +113,33 @@ export const sendPolicyTransaction = async (
 
   return await walletClient.writeContract(request);
 };
+
+export const hasPolicy = async (coverBuyer: Address) => {
+  const policy = await publicClient.readContract({
+    address: pharoCoverAddress,
+    abi: pharoCoverAbi,
+    functionName: "getBuyerPoliciesCount",
+    args: [coverBuyer, [BigInt(0)]],
+  });
+
+  console.log("policy id for:", coverBuyer,  Number(policy));
+
+  return policy >= BigInt(0);
+};
+
+export const getUserData = async (fid: number) => {
+  const options = {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      api_key: process.env.NEYNAR_API_KEY as string,
+    },
+  };
+
+  const response = await fetch(
+    `https://api.neynar.com/v2/farcaster/user/bulk?fids=${fid}`,
+    options
+  );
+
+  return response.json();
+};

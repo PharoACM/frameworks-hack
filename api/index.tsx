@@ -6,15 +6,20 @@ import { handle } from "frog/vercel";
 import {
   getPharoBalance,
   getShibPriceData,
+  getUserData,
+  hasPolicy,
   sendMintTransaction,
-  sendPolicyTransaction,
 } from "../utils/client.js";
-import { Address, formatEther } from "viem";
+import { Address } from "viem";
+import { abi as pharoCoverAbi } from "../abis/PharoCover.js";
+import { baseSepolia } from "viem/chains";
+import { pharoCoverAddress, pharoTokenAddress } from "../utils/config.js";
+// import { landingImage } from "./images.js";
 
 // Uncomment to use Edge Runtime.
 // export const config = {
-//   runtime: 'edge',
-// }
+//   runtime: "edge",
+// };
 
 export const app = new Frog({
   assetsPath: "/",
@@ -29,7 +34,10 @@ app.frame("/", async (c) => {
   const { status } = c;
 
   return c.res({
-    image: tempImage(`Click next to participate.`, status),
+    image: tempImage(
+      "Welcome to Pharo Cover!\nClick Next to participate.",
+      status
+    ),
     intents: [
       <Button action="/mint">Next</Button>,
       status === ("response" || "redirect") && (
@@ -41,8 +49,7 @@ app.frame("/", async (c) => {
 
 app.frame("/mint", async (c) => {
   const { frameData, verified, status } = c;
-  // const { castId, fid, messageHash, network, timestamp, url } = frameData;
-  // console.log("shit", { castId, fid, messageHash, network, timestamp, url });
+  const userData = await getUserData(frameData?.fid!);
 
   let userAddress: Address;
 
@@ -53,8 +60,8 @@ app.frame("/mint", async (c) => {
     });
   }
 
-  if (frameData) {
-    userAddress = frameData?.address as Address;
+  if (userData.users[0]) {
+    userAddress = userData.users[0].custody_address as Address;
     if (userAddress.length > 2) {
       pharoBalance = await getPharoBalance(userAddress);
 
@@ -64,11 +71,9 @@ app.frame("/mint", async (c) => {
           userAddress
         );
 
-        console.log("mintTx", mintTx);
-
         return c.res({
           image: tempImage(
-            "Mint Successful! You now have 1500 PHRO tokens. Click next to participate.",
+            `Mint Successful! You now have 1500 PHRO tokens \n${mintTx}. \n Click next to participate.`,
             status
           ),
           intents: [
@@ -83,13 +88,11 @@ app.frame("/mint", async (c) => {
     // );
   }
 
-  console.log("frameData", { verified, frameData });
-
   return c.res({
     image: tempImage(
       pharoBalance > 0
         ? "You have PHRO tokens. Click next to participate."
-        : "Something went wrong. Please try again.",
+        : "PHRO balance is 0, something went wrong. Please try again.",
       status
     ),
     intents: [
@@ -101,6 +104,9 @@ app.frame("/mint", async (c) => {
 
 app.frame("/participate", async (c) => {
   const { status, frameData, verified } = c;
+  const userData = await getUserData(frameData?.fid!);
+
+  let userAddress: Address;
 
   if (!verified) {
     return c.res({
@@ -109,35 +115,33 @@ app.frame("/participate", async (c) => {
     });
   }
 
-  if (frameData) {
-    // for local testing
-    // frameData.address = "0x3f15B8c6F9939879Cb030D6dd935348E57109637";
-    const userAddress: Address = frameData?.address as Address;
-    if (userAddress.length > 2) {
-      // local testing
-      // pharoBalance = await getPharoBalance(
-      //   "0x3f15B8c6F9939879Cb030D6dd935348E57109637" as Address
-      // );
-      pharoBalance = await getPharoBalance(userAddress);
+  if (userData.users[0]) {
+    userAddress = userData.users[0].custody_address as Address;
+    // local testing
+    // pharoBalance = await getPharoBalance(
+    //   "0x3f15B8c6F9939879Cb030D6dd935348E57109637" as Address
+    // );
 
-      console.log("/participate", {
-        pharoBalance: Number(formatEther(pharoBalance)).toFixed(4),
-        frameData,
+    const alreadyParticipated = await hasPolicy(userAddress);
+    if (alreadyParticipated) {
+      return c.res({
+        image: tempImage("You have already participated.", status),
+        intents: [<Button.Reset>Reset</Button.Reset>],
       });
     }
 
+    pharoBalance = await getPharoBalance(userAddress);
     const shibPrice = await getShibPriceData();
 
-    console.log("some shit", { frameData, shibPrice });
-
     return c.res({
+      action: "/finish",
       image: tempImage(
         `Current SHIB price ${shibPrice["shiba-inu"].usd} \nWelcome! Submit your estimate...`,
         status
       ),
       intents: [
         <TextInput placeholder="Enter your estimate..." />,
-        <Button action="/submit-rate">Submit</Button>,
+        <Button.Transaction target="/submit-rate">Submit</Button.Transaction>,
         status === "response" && <Button.Reset>Reset</Button.Reset>,
       ],
     });
@@ -149,55 +153,49 @@ app.frame("/participate", async (c) => {
   });
 });
 
-app.frame("/submit-rate", async (c) => {
-  const { buttonValue, inputText, status, verified, frameData } = c;
+app.transaction("/submit-rate", async (c) => {
+  const { buttonValue, inputText, frameData } = c;
+  const userData = await getUserData(frameData?.fid!);
   let userAddress: Address;
-
-  if (!verified) {
-    return c.res({
-      image: tempImage("Not Verified frame message.", status),
-      intents: [<Button.Reset>Reset</Button.Reset>],
-    });
-  }
   const rateEstimate = inputText || buttonValue;
+  userAddress = userData.users[0].verified_addresses
+    .eth_addresses[0] as Address;
 
-  console.log("rateEstimate", rateEstimate);
-
-  if (frameData) {
-    // for local testing
-    // frameData.address = "0x3f15B8c6F9939879Cb030D6dd935348E57109637";
-    userAddress = frameData?.address as Address;
-
-    if (userAddress.length > 2) {
-      // send create policy tx
-      sendPolicyTransaction(BigInt(rateEstimate ?? 65), userAddress);
-    }
-
-    return c.res({
-      image: tempImage(
-        `Your estimate is in ${rateEstimate} hours SHIB will fall by 5% or more.`,
-        status
-      ),
-      intents: [
-        <Button value="finish" action="/finish">
-          Finish
-        </Button>,
-        status === "response" && <Button.Reset>Reset</Button.Reset>,
-      ],
-    });
-  }
-
-  return c.res({
-    image: tempImage("Something went wrong. Please try again", status),
-    intents: [<Button.Reset>Reset</Button.Reset>],
+  return c.contract({
+    abi: pharoCoverAbi,
+    chainId: `eip155:${baseSepolia.id}`,
+    functionName: "createCoverPolicy",
+    to: pharoCoverAddress,
+    args: [
+      userAddress,
+      pharoTokenAddress,
+      BigInt(0),
+      {
+        minCover: BigInt(3000),
+        premium: BigInt(1500),
+        rateEstimate: BigInt(rateEstimate as string),
+        lengthOfCover: BigInt(604800), // seconds in a week
+      },
+    ],
   });
 });
 
 app.frame("/finish", (c) => {
-  const { status } = c;
+  const { status, transactionId } = c;
+
   return c.res({
-    image: tempImage("Thank you for participating!", status),
-    intents: [<Button.Link href="">Share</Button.Link>],
+    image: tempImage(
+      `Thank you for participating!\nYour tx hash: ${transactionId?.slice(
+        0,
+        4
+      )}`,
+      status
+    ),
+    intents: [
+      <Button.Link href="https://warpcast.com/jaxcoder.eth/0xf5b0b729">
+        Share
+      </Button.Link>,
+    ],
   });
 });
 
