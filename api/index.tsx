@@ -14,14 +14,18 @@ import { Address } from "viem";
 import { abi as pharoCoverAbi } from "../abis/PharoCover.js";
 import { baseSepolia } from "viem/chains";
 import { pharoCoverAddress, pharoTokenAddress } from "../utils/config.js";
-// import { landingImage } from "./images.js";
 
 // Uncomment to use Edge Runtime.
 // export const config = {
 //   runtime: "edge",
 // };
 
-export const app = new Frog({
+type State = {
+  pharoBalance: bigint;
+  liked: boolean;
+};
+
+export const app = new Frog<{ State: State }>({
   assetsPath: "/",
   basePath: "/api",
   // Supply a Hub to enable frame verification.
@@ -34,10 +38,7 @@ app.frame("/", async (c) => {
   const { status } = c;
 
   return c.res({
-    image: tempImage(
-      "Welcome to Pharo Cover!\nClick Next to participate.",
-      status
-    ),
+    image: tempImage("Welcome to Pharo!\nClick Next to participate.", status),
     intents: [
       <Button action="/mint">Next</Button>,
       status === ("response" || "redirect") && (
@@ -49,6 +50,7 @@ app.frame("/", async (c) => {
 
 app.frame("/mint", async (c) => {
   const { frameData, verified, status } = c;
+
   const userData = await getUserData(frameData?.fid!);
 
   let userAddress: Address;
@@ -123,7 +125,7 @@ app.frame("/participate", async (c) => {
     // );
 
     const alreadyParticipated = await hasPolicy(userAddress);
-    if (alreadyParticipated) {
+    if (!alreadyParticipated) {
       return c.res({
         image: tempImage("You have already participated.", status),
         intents: [<Button.Reset>Reset</Button.Reset>],
