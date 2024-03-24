@@ -40,7 +40,7 @@ app.frame("/", async (c) => {
   return c.res({
     image: tempImage(
       "Welcome to Pharo!\nClick Next to participate.",
-      `/images/anubis-shiba-sky-underworld.png`
+      `anubis-shiba-sky-underworld.png`
     ),
     intents: [
       <Button action="/mint">Next</Button>,
