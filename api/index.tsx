@@ -61,7 +61,7 @@ app.frame("/mint", async (c) => {
     return c.res({
       image: tempImage(
         "Not Verified frame message.",
-        `/images/anubis-putting-river-pyramids-bright-16-9.png`
+        `/anubis-putting-river-pyramids-bright-16-9.png`
       ),
       intents: [<Button.Reset>Reset</Button.Reset>],
     });
@@ -81,7 +81,7 @@ app.frame("/mint", async (c) => {
         return c.res({
           image: tempImage(
             `Mint Successful! You now have 1500 PHRO tokens \n${mintTx}. \n Click next to participate.`,
-            `/images/anubis-helping-shiba.png`
+            `/anubis-helping-shiba.png`
           ),
           intents: [
             pharoBalance > 0 && <Button action="/participate">Next</Button>,
@@ -100,7 +100,7 @@ app.frame("/mint", async (c) => {
       pharoBalance > 0
         ? "You have PHRO tokens. Click next to continue."
         : "PHRO balance is 0, something went wrong. Please try again.",
-      `/images/anubis-helping-shiba.png`
+      `/anubis-helping-shiba.png`
     ),
     intents: [
       pharoBalance > 0n && <Button action="/participate">Next</Button>,
@@ -134,7 +134,7 @@ app.frame("/participate", async (c) => {
       return c.res({
         image: tempImage(
           "You have already participated.",
-          `/images/anubis-putting-river-pyramids-bright-16-9.jpg`
+          `/anubis-putting-river-pyramids-bright-16-9.jpg`
         ),
         intents: [<Button.Reset>Reset</Button.Reset>],
       });
@@ -147,7 +147,7 @@ app.frame("/participate", async (c) => {
       action: "/finish",
       image: tempImage(
         `Current SHIB price ${shibPrice["shiba-inu"].usd} USD. Submit your estimate...`,
-        `/images/Anubis_and_Shiba_Inu_on_a_Cliff.png`
+        `/Anubis_and_Shiba_Inu_on_a_Cliff.png`
       ),
       intents: [
         <TextInput placeholder="Enter your estimate..." />,
@@ -160,7 +160,7 @@ app.frame("/participate", async (c) => {
   return c.res({
     image: tempImage(
       "Please connect your wallet to mint PHRO tokens.",
-      `/images/anubis-putting-river-pyramids-bright-16-9.jpg`
+      `/anubis-putting-river-pyramids-bright-16-9.jpg`
     ),
     intents: [],
   });
