@@ -38,7 +38,10 @@ app.frame("/", async (c) => {
   const { status } = c;
 
   return c.res({
-    image: tempImage("Welcome to Pharo!\nClick Next to participate.", status),
+    image: tempImage(
+      "Welcome to Pharo!\nClick Next to participate.",
+      `/images/anubis-shiba-sky-underworld.png`
+    ),
     intents: [
       <Button action="/mint">Next</Button>,
       status === ("response" || "redirect") && (
@@ -49,15 +52,17 @@ app.frame("/", async (c) => {
 });
 
 app.frame("/mint", async (c) => {
-  const { frameData, verified, status } = c;
-
+  const { frameData, verified } = c;
   const userData = await getUserData(frameData?.fid!);
 
   let userAddress: Address;
 
   if (!verified) {
     return c.res({
-      image: tempImage("Not Verified frame message.", status),
+      image: tempImage(
+        "Not Verified frame message.",
+        `/images/anubis-putting-river-pyramids-bright-16-9.png`
+      ),
       intents: [<Button.Reset>Reset</Button.Reset>],
     });
   }
@@ -76,7 +81,7 @@ app.frame("/mint", async (c) => {
         return c.res({
           image: tempImage(
             `Mint Successful! You now have 1500 PHRO tokens \n${mintTx}. \n Click next to participate.`,
-            status
+            `/images/anubis-helping-shiba.png`
           ),
           intents: [
             pharoBalance > 0 && <Button action="/participate">Next</Button>,
@@ -93,9 +98,9 @@ app.frame("/mint", async (c) => {
   return c.res({
     image: tempImage(
       pharoBalance > 0
-        ? "You have PHRO tokens. Click next to participate."
+        ? "You have PHRO tokens. Click next to continue."
         : "PHRO balance is 0, something went wrong. Please try again.",
-      status
+      `/images/anubis-helping-shiba.png`
     ),
     intents: [
       pharoBalance > 0n && <Button action="/participate">Next</Button>,
@@ -127,7 +132,10 @@ app.frame("/participate", async (c) => {
     const alreadyParticipated = await hasPolicy(userAddress);
     if (!alreadyParticipated) {
       return c.res({
-        image: tempImage("You have already participated.", status),
+        image: tempImage(
+          "You have already participated.",
+          `/images/anubis-putting-river-pyramids-bright-16-9.jpg`
+        ),
         intents: [<Button.Reset>Reset</Button.Reset>],
       });
     }
@@ -138,8 +146,8 @@ app.frame("/participate", async (c) => {
     return c.res({
       action: "/finish",
       image: tempImage(
-        `Current SHIB price ${shibPrice["shiba-inu"].usd} \nWelcome! Submit your estimate...`,
-        status
+        `Current SHIB price ${shibPrice["shiba-inu"].usd} USD. Submit your estimate...`,
+        `/images/Anubis_and_Shiba_Inu_on_a_Cliff.png`
       ),
       intents: [
         <TextInput placeholder="Enter your estimate..." />,
@@ -150,7 +158,10 @@ app.frame("/participate", async (c) => {
   }
 
   return c.res({
-    image: tempImage("Please connect your wallet to mint PHRO tokens.", status),
+    image: tempImage(
+      "Please connect your wallet to mint PHRO tokens.",
+      `/images/anubis-putting-river-pyramids-bright-16-9.jpg`
+    ),
     intents: [],
   });
 });
@@ -191,7 +202,7 @@ app.frame("/finish", (c) => {
         0,
         4
       )}`,
-      status
+      `/images/anubis-putting-river-pyramids-bright-16-9.jpg`
     ),
     intents: [
       <Button.Link href="https://warpcast.com/jaxcoder.eth/0xf5b0b729">
@@ -201,18 +212,12 @@ app.frame("/finish", (c) => {
   });
 });
 
-function tempImage(
-  content: string,
-  status: "initial" | "redirect" | "response"
-) {
+function tempImage(content: string, image: string | undefined) {
   return (
     <div
       style={{
         alignItems: "center",
-        background:
-          status === "response"
-            ? "linear-gradient(to right, #432889, #17101F)"
-            : "black",
+        background: "linear-gradient(to right, gold, #17101F)",
         backgroundSize: "100% 100%",
         display: "flex",
         flexDirection: "column",
@@ -221,18 +226,42 @@ function tempImage(
         justifyContent: "center",
         textAlign: "center",
         width: "100%",
+        position: "relative" /* Add relative positioning */,
       }}
     >
       <div
         style={{
-          color: "white",
           fontSize: 60,
           fontStyle: "normal",
           letterSpacing: "-0.025em",
           lineHeight: 1.4,
-          marginTop: 30,
           padding: "0 120px",
           whiteSpace: "pre-wrap",
+          display: "flex",
+          position: "absolute" /* Absolutely position the image */,
+          top: 0 /* Adjust as needed */,
+          left: -120 /* Adjust as needed */,
+          zIndex: 1 /* Lower z-index for image (behind text) */,
+        }}
+      >
+        {image && (
+          <img src={image} alt="Pharo Landing" height={620} width={1200} />
+        )}
+      </div>
+      <div
+        style={{
+          color: "white",
+          fontSize: 60,
+          fontWeight: "bold",
+          position: "absolute" /* Absolutely position the text */,
+          top: "50%" /* Adjust as needed */,
+          left: "50%" /* Adjust as needed */,
+          zIndex: 10 /* Higher z-index for text (in front) */,
+          backgroundColor: "rgba(0, 0, 0, 0.5)" /* Semi-transparent */,
+          padding: "20px" /* Add some padding */,
+          borderRadius: "10px" /* Optional: Add rounded corners */,
+          maxWidth: "80%" /* Optional: Limit width */,
+          transform: "translate(-50%, -50%)" /* Center the text */,
         }}
       >
         {content}
