@@ -7,7 +7,7 @@ import {
   getPharoBalance,
   getShibPriceData,
   getUserData,
-  hasPolicy,
+  // hasPolicy,
   sendMintTransaction,
 } from "../utils/client.js";
 import { Address } from "viem";
@@ -28,7 +28,6 @@ type State = {
 export const app = new Frog<{ State: State }>({
   assetsPath: "/",
   basePath: "/api",
-  // Supply a Hub to enable frame verification.
   hub: neynar({ apiKey: process.env.NEYNAR_API_KEY as string }),
 });
 
@@ -38,7 +37,7 @@ app.frame("/", async (c) => {
   const { status } = c;
 
   return c.res({
-    image: tempImage(
+    image: renderImage(
       "Welcome to Pharo!\nClick Next to participate.",
       `/anubis-shiba-sky-underworld.png`
     ),
@@ -59,7 +58,7 @@ app.frame("/mint", async (c) => {
 
   if (!verified) {
     return c.res({
-      image: tempImage(
+      image: renderImage(
         "Not Verified frame message.",
         `/anubis-putting-river-pyramids-bright-16-9.png`
       ),
@@ -74,13 +73,10 @@ app.frame("/mint", async (c) => {
       pharoBalance = await getPharoBalance(userAddress);
 
       if (pharoBalance < 1500) {
-        const mintTx = await sendMintTransaction(
-          // "0x3f15B8c6F9939879Cb030D6dd935348E57109637" as `0x${string}`
-          userAddress
-        );
+        const mintTx = await sendMintTransaction(userAddress);
 
         return c.res({
-          image: tempImage(
+          image: renderImage(
             `Mint Successful! You now have 1500 PHRO tokens \n${mintTx.slice(
               0,
               8
@@ -91,14 +87,10 @@ app.frame("/mint", async (c) => {
         });
       }
     }
-    // local testing
-    // pharoBalance = await getPharoBalance(
-    //   "0x3f15B8c6F9939879Cb030D6dd935348E57109637" as Address
-    // );
   }
 
   return c.res({
-    image: tempImage(
+    image: renderImage(
       pharoBalance > 0
         ? "You have PHRO tokens. Click next to continue."
         : "PHRO balance is 0, something went wrong. Please try again.",
@@ -119,7 +111,7 @@ app.frame("/participate", async (c) => {
 
   if (!verified) {
     return c.res({
-      image: tempImage("Not Verified frame message.", status),
+      image: renderImage("Not Verified frame message.", status),
       intents: [<Button.Reset>Reset</Button.Reset>],
     });
   }
@@ -127,15 +119,12 @@ app.frame("/participate", async (c) => {
   if (userData.users[0]) {
     userAddress = userData.users[0].verified_addresses
       .eth_addresses[0] as Address;
-    // local testing
-    // pharoBalance = await getPharoBalance(
-    //   "0x3f15B8c6F9939879Cb030D6dd935348E57109637" as Address
-    // );
 
+    // Note: Uncomment to check if user has already participated
     // const alreadyParticipated = await hasPolicy(userAddress);
     // if (alreadyParticipated) {
     //   return c.res({
-    //     image: tempImage(
+    //     image: renderImage(
     //       "You have already participated.",
     //       `/anubis-putting-river-pyramids-bright-16-9.jpg`
     //     ),
@@ -148,7 +137,7 @@ app.frame("/participate", async (c) => {
 
     return c.res({
       action: "/finish",
-      image: tempImage(
+      image: renderImage(
         `Current SHIB price ${shibPrice["shiba-inu"].usd} USD. Submit your estimate...`,
         `/Anubis_and_Shiba_Inu_on_a_Cliff.png`
       ),
@@ -161,7 +150,7 @@ app.frame("/participate", async (c) => {
   }
 
   return c.res({
-    image: tempImage(
+    image: renderImage(
       "Please connect your wallet to mint PHRO tokens.",
       `/anubis-putting-river-pyramids-bright-16-9.jpg`
     ),
@@ -197,10 +186,10 @@ app.transaction("/submit-rate", async (c) => {
 });
 
 app.frame("/finish", (c) => {
-  const { status, transactionId } = c;
+  const { transactionId } = c;
 
   return c.res({
-    image: tempImage(
+    image: renderImage(
       `Thank you for participating!\nYour tx hash: ${transactionId?.slice(
         0,
         4
@@ -215,7 +204,7 @@ app.frame("/finish", (c) => {
   });
 });
 
-function tempImage(content: string, image: string | undefined) {
+function renderImage(content: string, image: string | undefined) {
   return (
     <div
       style={{

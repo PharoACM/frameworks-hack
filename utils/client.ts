@@ -1,10 +1,7 @@
 import {
   Address,
-  Hex,
   createPublicClient,
   createWalletClient,
-  encodeAbiParameters,
-  encodeFunctionData,
   http,
   parseEther,
 } from "viem";
@@ -24,15 +21,12 @@ config();
 export const walletClient = createWalletClient({
   chain: baseSepolia,
   transport: http(),
-  // account: privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`),
 });
 
 export const publicClient = createPublicClient({
   chain: baseSepolia,
   transport: http(),
 });
-
-// or: const [address] = await client.requestAddresses()
 
 // JSON-RPC Account
 export const [address] = await walletClient.getAddresses();
@@ -69,8 +63,6 @@ export const getPharoBalance = async (user: Address) => {
     functionName: "balanceOf",
     args: [user],
   });
-
-  console.log("balance", balance);
 
   return BigInt(balance);
 };
@@ -121,8 +113,6 @@ export const hasPolicy = async (coverBuyer: Address) => {
     functionName: "getBuyerPoliciesCount",
     args: [coverBuyer, [BigInt(0)]],
   });
-
-  console.log("policy id for:", coverBuyer,  Number(policy));
 
   return policy >= BigInt(0);
 };
