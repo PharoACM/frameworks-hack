@@ -68,7 +68,8 @@ app.frame("/mint", async (c) => {
   }
 
   if (userData.users[0]) {
-    userAddress = userData.users[0].custody_address as Address;
+    userAddress = userData.users[0].verified_addresses
+      .eth_addresses[0] as Address;
     if (userAddress.length > 2) {
       pharoBalance = await getPharoBalance(userAddress);
 
@@ -80,12 +81,13 @@ app.frame("/mint", async (c) => {
 
         return c.res({
           image: tempImage(
-            `Mint Successful! You now have 1500 PHRO tokens \n${mintTx}. \n Click next to participate.`,
+            `Mint Successful! You now have 1500 PHRO tokens \n${mintTx.slice(
+              0,
+              8
+            )}. \n Click next to participate.`,
             `/anubis-helping-shiba.png`
           ),
-          intents: [
-            pharoBalance > 0 && <Button action="/participate">Next</Button>,
-          ],
+          intents: [<Button action="/participate">Next</Button>],
         });
       }
     }
@@ -123,22 +125,23 @@ app.frame("/participate", async (c) => {
   }
 
   if (userData.users[0]) {
-    userAddress = userData.users[0].custody_address as Address;
+    userAddress = userData.users[0].verified_addresses
+      .eth_addresses[0] as Address;
     // local testing
     // pharoBalance = await getPharoBalance(
     //   "0x3f15B8c6F9939879Cb030D6dd935348E57109637" as Address
     // );
 
-    const alreadyParticipated = await hasPolicy(userAddress);
-    if (alreadyParticipated) {
-      return c.res({
-        image: tempImage(
-          "You have already participated.",
-          `/anubis-putting-river-pyramids-bright-16-9.jpg`
-        ),
-        intents: [<Button.Reset>Reset</Button.Reset>],
-      });
-    }
+    // const alreadyParticipated = await hasPolicy(userAddress);
+    // if (alreadyParticipated) {
+    //   return c.res({
+    //     image: tempImage(
+    //       "You have already participated.",
+    //       `/anubis-putting-river-pyramids-bright-16-9.jpg`
+    //     ),
+    //     intents: [<Button.Reset>Reset</Button.Reset>],
+    //   });
+    // }
 
     pharoBalance = await getPharoBalance(userAddress);
     const shibPrice = await getShibPriceData();
@@ -202,7 +205,7 @@ app.frame("/finish", (c) => {
         0,
         4
       )}`,
-      `/images/anubis-putting-river-pyramids-bright-16-9.jpg`
+      `/anubis-putting-river-pyramids-bright-16-9.jpg`
     ),
     intents: [
       <Button.Link href="https://warpcast.com/jaxcoder.eth/0xf5b0b729">
