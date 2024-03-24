@@ -130,7 +130,7 @@ app.frame("/participate", async (c) => {
     // );
 
     const alreadyParticipated = await hasPolicy(userAddress);
-    if (!alreadyParticipated) {
+    if (alreadyParticipated) {
       return c.res({
         image: tempImage(
           "You have already participated.",
@@ -231,16 +231,10 @@ function tempImage(content: string, image: string | undefined) {
     >
       <div
         style={{
-          fontSize: 60,
-          fontStyle: "normal",
-          letterSpacing: "-0.025em",
-          lineHeight: 1.4,
-          padding: "0 120px",
           whiteSpace: "pre-wrap",
           display: "flex",
           position: "absolute" /* Absolutely position the image */,
           top: 0 /* Adjust as needed */,
-          left: -120 /* Adjust as needed */,
           zIndex: 1 /* Lower z-index for image (behind text) */,
         }}
       >
@@ -261,6 +255,7 @@ function tempImage(content: string, image: string | undefined) {
           padding: "20px" /* Add some padding */,
           borderRadius: "10px" /* Optional: Add rounded corners */,
           maxWidth: "80%" /* Optional: Limit width */,
+          height: "45%" /* Optional: Limit height */,
           transform: "translate(-50%, -50%)" /* Center the text */,
         }}
       >
