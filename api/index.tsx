@@ -7,6 +7,7 @@ import {
   getPharoBalance,
   getShibPriceData,
   sendMintTransaction,
+  sendPolicyTransaction,
 } from "../utils/client.js";
 import { Address, formatEther } from "viem";
 
@@ -22,40 +23,15 @@ export const app = new Frog({
   hub: neynar({ apiKey: process.env.NEYNAR_API_KEY as string }),
 });
 
-// todo: mocked until we fetch from chain
 let pharoBalance: bigint = 0n;
 
 app.frame("/", async (c) => {
-  const { status, frameData } = c;
-
-  // local testing
-  // pharoBalance = await getPharoBalance(
-  //   "0x3f15B8c6F9939879Cb030D6dd935348E57109637" as Address
-  // );
-  pharoBalance = await getPharoBalance(frameData?.address! as Address);
-
-  console.log("/", {
-    pharoBalance: Number(formatEther(pharoBalance)).toFixed(4),
-    frameData,
-  });
+  const { status } = c;
 
   return c.res({
-    image: tempImage(
-      pharoBalance === 0n
-        ? "🙀 You don't have any PHRO tokens. Go ahead and mint some 🥳"
-        : `Your PHRO balance ${Number(formatEther(pharoBalance)).toFixed(
-            2
-          )}\nClick next to participate.`,
-      status
-    ),
+    image: tempImage(`Click next to participate.`, status),
     intents: [
-      pharoBalance < BigInt(1500) ? (
-        <Button action="/mint">Mint</Button>
-      ) : (
-        <Button value="participate" action="/participate">
-          Next
-        </Button>
-      ),
+      <Button action="/mint">Next</Button>,
       status === ("response" || "redirect") && (
         <Button.Reset>Reset</Button.Reset>
       ),
@@ -66,89 +42,154 @@ app.frame("/", async (c) => {
 app.frame("/mint", async (c) => {
   const { frameData, verified, status } = c;
   // const { castId, fid, messageHash, network, timestamp, url } = frameData;
+  // console.log("shit", { castId, fid, messageHash, network, timestamp, url });
 
-  const mintTx = await sendMintTransaction(
-    "0x3f15B8c6F9939879Cb030D6dd935348E57109637" as `0x${string}`
-  );
-
-  console.log("frameData", { mintTx, verified, frameData });
-
-  return c.res({
-    image: tempImage(
-      "Mint Successful! You now have 1500 PHRO tokens. Click next to participate.",
-      status
-    ),
-    intents: [pharoBalance > 0 && <Button action="/participate">Next</Button>],
-  });
-});
-
-app.frame("/mint-success", (c) => {
-  const { status, verified, frameData } = c;
-
-  console.log("frameData", { frameData, verified });
+  let userAddress: Address;
 
   if (!verified) {
     return c.res({
-      image: tempImage(
-        "Please connect your wallet to mint PHRO tokens.",
-        status
-      ),
-      intents: [],
+      image: tempImage("Not Verified frame message.", status),
+      intents: [<Button.Reset>Reset</Button.Reset>],
     });
   }
 
+  if (frameData) {
+    userAddress = frameData?.address as Address;
+    if (userAddress.length > 2) {
+      pharoBalance = await getPharoBalance(userAddress);
+
+      if (pharoBalance < 1500) {
+        const mintTx = await sendMintTransaction(
+          // "0x3f15B8c6F9939879Cb030D6dd935348E57109637" as `0x${string}`
+          userAddress
+        );
+
+        console.log("mintTx", mintTx);
+
+        return c.res({
+          image: tempImage(
+            "Mint Successful! You now have 1500 PHRO tokens. Click next to participate.",
+            status
+          ),
+          intents: [
+            pharoBalance > 0 && <Button action="/participate">Next</Button>,
+          ],
+        });
+      }
+    }
+    // local testing
+    // pharoBalance = await getPharoBalance(
+    //   "0x3f15B8c6F9939879Cb030D6dd935348E57109637" as Address
+    // );
+  }
+
+  console.log("frameData", { verified, frameData });
+
   return c.res({
     image: tempImage(
-      "Mint Successful! You now have 1500 PHRO tokens. Click next to participate.",
+      pharoBalance > 0
+        ? "You have PHRO tokens. Click next to participate."
+        : "Something went wrong. Please try again.",
       status
     ),
-    intents: [pharoBalance > 0 && <Button action="/participate">Next</Button>],
+    intents: [
+      pharoBalance > 0n && <Button action="/participate">Next</Button>,
+      pharoBalance === 0n && <Button.Reset>Reset</Button.Reset>,
+    ],
   });
 });
 
 app.frame("/participate", async (c) => {
-  const { status } = c;
+  const { status, frameData, verified } = c;
 
-  const shibPrice = await getShibPriceData();
+  if (!verified) {
+    return c.res({
+      image: tempImage("Not Verified frame message.", status),
+      intents: [<Button.Reset>Reset</Button.Reset>],
+    });
+  }
 
-  console.log("shibPrice", shibPrice);
+  if (frameData) {
+    // for local testing
+    // frameData.address = "0x3f15B8c6F9939879Cb030D6dd935348E57109637";
+    const userAddress: Address = frameData?.address as Address;
+    if (userAddress.length > 2) {
+      // local testing
+      // pharoBalance = await getPharoBalance(
+      //   "0x3f15B8c6F9939879Cb030D6dd935348E57109637" as Address
+      // );
+      pharoBalance = await getPharoBalance(userAddress);
+
+      console.log("/participate", {
+        pharoBalance: Number(formatEther(pharoBalance)).toFixed(4),
+        frameData,
+      });
+    }
+
+    const shibPrice = await getShibPriceData();
+
+    console.log("some shit", { frameData, shibPrice });
+
+    return c.res({
+      image: tempImage(
+        `Current SHIB price ${shibPrice["shiba-inu"].usd} \nWelcome! Submit your estimate...`,
+        status
+      ),
+      intents: [
+        <TextInput placeholder="Enter your estimate..." />,
+        <Button action="/submit-rate">Submit</Button>,
+        status === "response" && <Button.Reset>Reset</Button.Reset>,
+      ],
+    });
+  }
 
   return c.res({
-    image: tempImage(
-      `Current SHIB price ${shibPrice["shiba-inu"].usd} \nWelcome! Submit your estimate...`,
-      status
-    ),
-    intents: [
-      <TextInput placeholder="Enter your estimate..." />,
-      <Button action="/submit-rate">Submit</Button>,
-      status === "response" && <Button.Reset>Reset</Button.Reset>,
-    ],
+    image: tempImage("Please connect your wallet to mint PHRO tokens.", status),
+    intents: [],
   });
 });
 
-app.frame("/submit-rate", (c) => {
-  const { buttonValue, inputText, status } = c;
+app.frame("/submit-rate", async (c) => {
+  const { buttonValue, inputText, status, verified, frameData } = c;
+  let userAddress: Address;
+
+  if (!verified) {
+    return c.res({
+      image: tempImage("Not Verified frame message.", status),
+      intents: [<Button.Reset>Reset</Button.Reset>],
+    });
+  }
   const rateEstimate = inputText || buttonValue;
 
   console.log("rateEstimate", rateEstimate);
 
-  // const contractData: ContractTransactionParameters = {
-  //   abi: pharoTokenAbi,
-  //   chainId: `eip155:${baseSepolia.id}`,
-  //   functionName: "submitRate",
-  //   args: [rateEstimate],
-  //   to: pharoTokenAddress,
-  // };
+  if (frameData) {
+    // for local testing
+    // frameData.address = "0x3f15B8c6F9939879Cb030D6dd935348E57109637";
+    userAddress = frameData?.address as Address;
 
-  // return c.contract(contractData);
+    if (userAddress.length > 2) {
+      // send create policy tx
+      sendPolicyTransaction(BigInt(rateEstimate ?? 65), userAddress);
+    }
+
+    return c.res({
+      image: tempImage(
+        `Your estimate is in ${rateEstimate} hours SHIB will fall by 5% or more.`,
+        status
+      ),
+      intents: [
+        <Button value="finish" action="/finish">
+          Finish
+        </Button>,
+        status === "response" && <Button.Reset>Reset</Button.Reset>,
+      ],
+    });
+  }
+
   return c.res({
-    image: tempImage(`Your estimate is in ${rateEstimate} hours SHIB will fall by 5% or more.`, status),
-    intents: [
-      <Button value="finish" action="/finish">
-        Finish
-      </Button>,
-      status === "response" && <Button.Reset>Reset</Button.Reset>,
-    ],
+    image: tempImage("Something went wrong. Please try again", status),
+    intents: [<Button.Reset>Reset</Button.Reset>],
   });
 });
 
@@ -156,7 +197,7 @@ app.frame("/finish", (c) => {
   const { status } = c;
   return c.res({
     image: tempImage("Thank you for participating!", status),
-    intents: [],
+    intents: [<Button.Link href="">Share</Button.Link>],
   });
 });
 

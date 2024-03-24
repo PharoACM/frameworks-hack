@@ -48,6 +48,7 @@ export const abi = [
     type: "function",
     name: "createCoverPolicy",
     inputs: [
+      { name: "userAddress", type: "address", internalType: "address" },
       { name: "token", type: "address", internalType: "address" },
       { name: "pharoId", type: "uint256", internalType: "uint256" },
       {
@@ -699,8 +700,6 @@ export const abi = [
       { name: "neededRole", type: "bytes32", internalType: "bytes32" },
     ],
   },
-  { type: "error", name: "CAP_REACHED", inputs: [] },
-  { type: "error", name: "INSUFFICIENT_BALANCE", inputs: [] },
   { type: "error", name: "MustBeGreaterThanZero", inputs: [] },
   { type: "error", name: "NOT_ALLOWED", inputs: [] },
   { type: "error", name: "NOT_ENOUGH_BALANCE", inputs: [] },

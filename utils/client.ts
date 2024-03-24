@@ -3,15 +3,21 @@ import {
   Hex,
   createPublicClient,
   createWalletClient,
+  encodeAbiParameters,
+  encodeFunctionData,
   http,
   parseEther,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { config } from "dotenv";
-import { pharoTokenAddress, defaultTokensToMint } from "./config.js";
+import {
+  pharoTokenAddress,
+  defaultTokensToMint,
+  pharoCoverAddress,
+} from "./config.js";
 import { abi as pharoTokenAbi } from "../abis/PharoToken.js";
-// import { abi as pharoCoverAbi } from "../abis/PharoCover.js";
+import { abi as pharoCoverAbi } from "../abis/PharoCover.js";
 
 config();
 
@@ -82,18 +88,28 @@ export const getShibPriceData = async () => {
   return response.json();
 };
 
-// export const sendPolicyTransaction = async (
-//   to: Address,
-//   data: Hex,
-//   _value = BigInt(0)
-// ) => {
-//   const { request } = await publicClient.simulateContract({
-//     account: adminAccount,
-//     address: pharoTokenAddress,
-//     abi: pharoCoverAbi,
-//     functionName: "createCoverPolicy",
-//     args: [],
-//   });
+export const sendPolicyTransaction = async (
+  rateEstimate: bigint,
+  coverBuyer: Address
+) => {
+  const { request } = await publicClient.simulateContract({
+    address: pharoCoverAddress,
+    abi: pharoCoverAbi,
+    functionName: "createCoverPolicy",
+    // [coverBuyer, token, pharoId, {signedPolicyData}]
+    args: [
+      coverBuyer,
+      pharoTokenAddress,
+      BigInt(0),
+      {
+        minCover: BigInt(3000),
+        premium: BigInt(1500),
+        rateEstimate: rateEstimate,
+        lengthOfCover: BigInt(604800), // seconds in a week
+      },
+    ],
+    account: adminAccount,
+  });
 
-//   return await walletClient.writeContract(request);
-// };
+  return await walletClient.writeContract(request);
+};

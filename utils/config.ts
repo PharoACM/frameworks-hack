@@ -3,6 +3,9 @@ import { Address } from "viem";
 export const pharoTokenAddress: Address =
   "0xB4204ecc047F026ABfC3B5794cFDBF7dAC7C4C9E";
 
+export const pharoCoverAddress: Address =
+  "0x1839DFbF2B3D2091268929a638c909B0A5bF55d2";
+
 export const defaultTokensToMint = 1500;
 
 export const shibTokenAddress: Address =
