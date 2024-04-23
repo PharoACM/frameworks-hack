@@ -138,7 +138,7 @@ app.frame("/participate", async (c) => {
     return c.res({
       action: "/finish",
       image: renderImage(
-        `Current SHIB price ${shibPrice["shiba-inu"].usd} USD. Submit your estimate...`,
+        `SHIB price ${shibPrice["shiba-inu"].usd} USD. In how many hours will it fall by 5% or more?`,
         `/Anubis_and_Shiba_Inu_on_a_Cliff.png`
       ),
       intents: [
